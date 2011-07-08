@@ -171,42 +171,43 @@ void CClipboardMonitorDlg::ProcessString(CString& str)
 	}
 
 	str.MakeLower();
+	
+	// check extension
 	if (str.Right(2) != ".h")
 		return;
 
+	// make UNIX-style slashes
 	str.Replace('\\', '/');
 
 	for (int i=0; i<m_includes.GetSize(); ++i)
 	{
-		const CString& include = m_includes[i]; 
-		if (_wcsnicmp(include, str, include.GetLength()) == 0)
-		{
-			// check to be valid file name
-			DWORD attr = GetFileAttributes(str);
-			if (attr ==  INVALID_FILE_ATTRIBUTES || (attr & FILE_ATTRIBUTE_DIRECTORY))
-				return;
+		const CString& path = m_includes[i]; 
+		int pos = str.Find(path);
+		if (pos == -1) continue;
 
-			// remove extra path part
-			str.Delete(0, include.GetLength());
-			if (str[0] == '/')
-				str.Delete(0);
+		// check to be a valid file name
+		DWORD attr = GetFileAttributes(str);
+		if (attr ==  INVALID_FILE_ATTRIBUTES || (attr & FILE_ATTRIBUTE_DIRECTORY))
+			return;
 
-			// create c-style #include string
-			CString include;
-			include.Format(L"#include \"%s\"\r\n", str); 
+		// remove extra path part
+		str.Delete(0, pos + path.GetLength());
+		if (str[0] == '/')
+			str.Delete(0);
 
-			// put it on the clipboard
-			CopyToClipboard(include);
-			break;
-		}
+		// create c-style #include string
+		CString include;
+		include.Format(L"#include \"%s\"\r\n", str); 
+
+		// put it on the clipboard
+		CopyToClipboard(include);
+		break;
 	}
-
-
 }
 
 void CClipboardMonitorDlg::InitializeIncludes()
 {
-	m_includes.Add(L"c:/starteam/coreplatform/nextrelease/code");
+	m_includes.Add(L"/coreplatform/code/");
 }
 
 void CClipboardMonitorDlg::OnDestroy( )
